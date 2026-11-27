@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Space Quiz — A little journey through the universe</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f2f5fb;
+      --surface: #fff;
+      --text: #15213b;
+      --muted: #52617b;
+      --border: #d7dfed;
+      --accent: #5138bb;
+      --accent-text: #fff;
+      --accent-soft: #eeebff;
+      --correct: #176c4c;
+      --correct-bg: #e4f6ed;
+      --wrong: #a12e45;
+      --wrong-bg: #fff0f2;
+      --shadow: 0 22px 65px rgba(34, 43, 82, .09);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme]) {
+        color-scheme: dark;
+        --bg: #101525;
+        --surface: #1b2236;
+        --text: #f2f4ff;
+        --muted: #b2bfd7;
+        --border: #3a4760;
+        --accent: #c1b4ff;
+        --accent-text: #20164e;
+        --accent-soft: #302956;
+        --correct: #8be2b8;
+        --correct-bg: #193d34;
+        --wrong: #ffb1be;
+        --wrong-bg: #4a2636;
+        --shadow: 0 22px 65px rgba(0, 0, 0, .22);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #101525;
+      --surface: #1b2236;
+      --text: #f2f4ff;
+      --muted: #b2bfd7;
+      --border: #3a4760;
+      --accent: #c1b4ff;
+      --accent-text: #20164e;
+      --accent-soft: #302956;
+      --correct: #8be2b8;
+      --correct-bg: #193d34;
+      --wrong: #ffb1be;
+      --wrong-bg: #4a2636;
+      --shadow: 0 22px 65px rgba(0, 0, 0, .22);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button { font: inherit; }
+    button:focus-visible, h2:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 4px;
+    }
+    .page { width: min(100% - 2rem, 760px); margin: 0 auto; padding: 2rem 0 3rem; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .brand { display: flex; align-items: center; gap: .65rem; font-weight: 800; letter-spacing: -.03em; }
+    .brand-icon {
+      display: grid; place-items: center; width: 2.4rem; height: 2.4rem;
+      border-radius: .8rem; background: var(--accent); color: var(--accent-text); font-size: 1.25rem;
+    }
+    .theme-toggle {
+      border: 1px solid var(--border); border-radius: 999px; padding: .55rem .9rem;
+      background: var(--surface); color: var(--text); cursor: pointer; font-size: .85rem; font-weight: 700;
+    }
+    .intro { margin: 3.5rem 0 2rem; }
+    .eyebrow {
+      margin: 0 0 .75rem; color: var(--accent); font-size: .75rem;
+      font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+    }
+    h1 { margin: 0; font-size: clamp(2.4rem, 7vw, 4rem); line-height: 1.05; letter-spacing: -.055em; }
+    .intro p:last-child { margin: .9rem 0 0; color: var(--muted); font-size: 1.05rem; }
+    .card { padding: clamp(1.25rem, 5vw, 2.5rem); background: var(--surface); border: 1px solid var(--border); border-radius: 1.4rem; box-shadow: var(--shadow); }
+    .stats { display: flex; justify-content: space-between; gap: 1rem; color: var(--muted); font-size: .88rem; font-weight: 700; }
+    .stats strong { color: var(--text); }
+    .progress { height: .55rem; margin: .85rem 0 2.4rem; overflow: hidden; border-radius: 999px; background: var(--border); }
+    .progress-fill { width: 0; height: 100%; border-radius: inherit; background: var(--accent); transition: width .3s ease; }
+    .question-label { margin: 0 0 .5rem; color: var(--accent); font-size: .75rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    h2 { margin: 0; font-size: clamp(1.4rem, 4vw, 1.85rem); line-height: 1.25; letter-spacing: -.03em; }
+    .hint { margin: .6rem 0 1.4rem; color: var(--muted); font-size: .9rem; }
+    .answers { display: grid; gap: .7rem; }
+    .answer {
+      display: flex; align-items: center; gap: .85rem; width: 100%; padding: .85rem 1rem;
+      border: 1px solid var(--border); border-radius: .8rem; background: var(--surface);
+      color: var(--text); text-align: left; cursor: pointer; font-weight: 650;
+    }
+    .answer:not([aria-disabled="true"]):hover { border-color: var(--accent); background: var(--accent-soft); }
+    .answer[aria-disabled="true"] { cursor: default; }
+    .letter {
+      display: grid; place-items: center; flex: 0 0 2rem; height: 2rem;
+      border-radius: .55rem; background: var(--accent-soft); color: var(--accent); font-size: .8rem; font-weight: 800;
+    }
+    .answer.correct { border-color: var(--correct); background: var(--correct-bg); color: var(--correct); animation: celebrate .45s ease; }
+    .answer.wrong { border-color: var(--wrong); background: var(--wrong-bg); color: var(--wrong); animation: shake .4s ease; }
+    .feedback { min-height: 1.5em; margin: 1.25rem 0 0; font-weight: 700; }
+    .feedback.correct-text { color: var(--correct); }
+    .feedback.wrong-text { color: var(--wrong); }
+    .actions { display: flex; justify-content: flex-end; margin-top: 1rem; }
+    .primary {
+      border: 0; border-radius: .8rem; padding: .85rem 1.25rem; background: var(--accent);
+      color: var(--accent-text); cursor: pointer; font-weight: 800;
+    }
+    .primary:hover { opacity: .88; }
+    .result-icon {
+      display: grid; place-items: center; width: 4rem; height: 4rem; margin-bottom: 1.5rem;
+      border-radius: 1.2rem; background: var(--accent-soft); color: var(--accent); font-size: 2rem;
+    }
+    .result-copy { color: var(--muted); }
+    .result-score { margin: 1.5rem 0; font-size: 1.1rem; }
+    .result-score strong { color: var(--accent); font-size: 2.5rem; letter-spacing: -.04em; }
+    .footer { margin: 1.5rem 0 0; color: var(--muted); text-align: center; font-size: .8rem; }
+    [hidden] { display: none !important; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      50% { transform: translateX(6px); }
+      75% { transform: translateX(-3px); }
+    }
+    @keyframes celebrate { 50% { transform: scale(1.015); } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+    @media (max-width: 480px) {
+      .page { padding-top: 1.25rem; }
+      .intro { margin-top: 2.5rem; }
+      .progress { margin-bottom: 1.8rem; }
+      .actions .primary { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand"><span class="brand-icon" aria-hidden="true">✦</span> Space Quiz</div>
+      <button class="theme-toggle" id="theme-toggle" type="button">Switch theme</button>
+    </header>
+
+    <main>
+      <div class="intro">
+        <p class="eyebrow">A little journey through the universe</p>
+        <h1>How well do you<br>know space?</h1>
+        <p>Ten questions. One universe. Let’s see what you know.</p>
+      </div>
+
+      <section class="card" id="quiz" aria-labelledby="question">
+        <div class="stats">
+          <span id="progress-text">0 of 10 answered</span>
+          <span>Score <strong id="score">0</strong> / 10</span>
+        </div>
+        <div class="progress" id="progress" role="progressbar" aria-label="Quiz progress" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" aria-valuetext="0 of 10 questions answered">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <p class="question-label" id="question-number"></p>
+        <h2 id="question" tabindex="-1"></h2>
+        <p class="hint">Choose one answer.</p>
+        <div class="answers" id="answers"></div>
+        <p class="feedback" id="feedback" role="status" aria-live="polite"></p>
+        <div class="actions">
+          <button class="primary" id="next" type="button" hidden>Next question →</button>
+        </div>
+      </section>
+
+      <section class="card" id="results" aria-labelledby="results-title" hidden>
+        <div class="result-icon" aria-hidden="true">✦</div>
+        <p class="eyebrow">Journey complete</p>
+        <h2 id="results-title" tabindex="-1">You made it to the end!</h2>
+        <p class="result-copy">Thanks for exploring the universe with us.</p>
+        <p class="result-score"><strong id="final-score">0</strong> / 10 correct</p>
+        <button class="primary" id="restart" type="button">Play again ↺</button>
+      </section>
+    </main>
+    <p class="footer">Made for curious minds, everywhere.</p>
+  </div>
+
+  <script>
+    const questions = [
+      { question: "Which planet is known as the Red Planet?", answers: ["Venus", "Mars", "Jupiter", "Mercury"], correct: 1 },
+      { question: "What is the name of the first human to travel into space?", answers: ["Neil Armstrong", "Valentina Tereshkova", "Yuri Gagarin", "John Glenn"], correct: 2 },
+      { question: "What is the largest planet in our solar system?", answers: ["Saturn", "Neptune", "Earth", "Jupiter"], correct: 3 },
+      { question: "What is the name of our galaxy?", answers: ["Andromeda", "The Milky Way", "The Whirlpool Galaxy", "The Sombrero Galaxy"], correct: 1 },
+      { question: "Which moon landing mission first put humans on the Moon?", answers: ["Apollo 11", "Apollo 8", "Apollo 13", "Gemini 4"], correct: 0 },
+      { question: "What powers the Sun?", answers: ["Burning oxygen", "Nuclear fusion", "Nuclear fission", "Molten rock"], correct: 1 },
+      { question: "Which planet is famous for its prominent rings?", answers: ["Mars", "Venus", "Saturn", "Earth"], correct: 2 },
+      { question: "What is the name of the telescope launched in 2021 to study the early universe?", answers: ["Hubble Space Telescope", "James Webb Space Telescope", "Kepler Space Telescope", "Spitzer Space Telescope"], correct: 1 },
+      { question: "What is a light-year a measure of?", answers: ["Time", "Brightness", "Speed", "Distance"], correct: 3 },
+      { question: "Which spacecraft was the first to enter interstellar space?", answers: ["Voyager 1", "Cassini", "New Horizons", "Pioneer 10"], correct: 0 }
+    ];
+
+    const quiz = document.getElementById("quiz");
+    const results = document.getElementById("results");
+    const question = document.getElementById("question");
+    const answers = document.getElementById("answers");
+    const feedback = document.getElementById("feedback");
+    const next = document.getElementById("next");
+    const progress = document.getElementById("progress");
+    const themeToggle = document.getElementById("theme-toggle");
+    let current = 0;
+    let score = 0;
+    let answered = false;
+
+    function updateStats() {
+      const completed = current + (answered ? 1 : 0);
+      document.getElementById("score").textContent = score;
+      document.getElementById("progress-text").textContent = `${completed} of ${questions.length} answered`;
+      progress.setAttribute("aria-valuenow", completed);
+      progress.setAttribute("aria-valuetext", `${completed} of ${questions.length} questions answered`);
+      document.getElementById("progress-fill").style.width = `${completed / questions.length * 100}%`;
+    }
+
+    function showQuestion() {
+      const item = questions[current];
+      answered = false;
+      document.getElementById("question-number").textContent = `Question ${current + 1} of ${questions.length}`;
+      question.textContent = item.question;
+      answers.replaceChildren();
+      feedback.textContent = "";
+      feedback.className = "feedback";
+      next.hidden = true;
+      item.answers.forEach((text, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "answer";
+        const letter = document.createElement("span");
+        letter.className = "letter";
+        letter.setAttribute("aria-hidden", "true");
+        letter.textContent = String.fromCharCode(65 + index);
+        const label = document.createElement("span");
+        label.textContent = text;
+        button.append(letter, label);
+        button.addEventListener("click", () => selectAnswer(index, button));
+        answers.append(button);
+      });
+      updateStats();
+    }
+
+    function selectAnswer(index, button) {
+      if (answered) return;
+      answered = true;
+      const item = questions[current];
+      const isCorrect = index === item.correct;
+      if (isCorrect) score++;
+      for (const answer of answers.children) answer.setAttribute("aria-disabled", "true");
+      button.classList.add(isCorrect ? "correct" : "wrong");
+      if (!isCorrect) answers.children[item.correct].classList.add("correct");
+      feedback.className = `feedback ${isCorrect ? "correct-text" : "wrong-text"}`;
+      feedback.textContent = isCorrect ? "Correct! Nice work." : `Not quite. The correct answer is ${item.answers[item.correct]}.`;
+      next.textContent = current === questions.length - 1 ? "See results →" : "Next question →";
+      next.hidden = false;
+      updateStats();
+    }
+
+    next.addEventListener("click", () => {
+      if (!answered) return;
+      if (current === questions.length - 1) {
+        quiz.hidden = true;
+        results.hidden = false;
+        document.getElementById("final-score").textContent = score;
+        document.getElementById("results-title").focus();
+      } else {
+        current++;
+        showQuestion();
+        question.focus();
+      }
+    });
+
+    document.getElementById("restart").addEventListener("click", () => {
+      current = 0;
+      score = 0;
+      results.hidden = true;
+      quiz.hidden = false;
+      showQuestion();
+      question.focus();
+    });
+
+    function updateThemeLabel() {
+      const dark = document.documentElement.dataset.theme
+        ? document.documentElement.dataset.theme === "dark"
+        : window.matchMedia("(prefers-color-scheme: dark)").matches;
+      themeToggle.textContent = dark ? "☀ Light mode" : "☾ Dark mode";
+      themeToggle.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+    }
+    themeToggle.addEventListener("click", () => {
+      const dark = document.documentElement.dataset.theme
+        ? document.documentElement.dataset.theme === "dark"
+        : window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = dark ? "light" : "dark";
+      updateThemeLabel();
+    });
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", updateThemeLabel);
+    updateThemeLabel();
+    showQuestion();
+  </script>
+</body>
+</html>
